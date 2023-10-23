@@ -6,10 +6,10 @@ import time
 from multiprocessing import Pool
 # 1. Export from MSSQL to CSV
 
-
+logicCores = 10 # how many thread will run this
 logging.basicConfig(filename='data_migration.log', level=logging.INFO)
 # Database connection parameters for MSSQL
-DATABASE = 'DB'
+DATABASE = 'Chinook'
 USERNAME = 'YourUsername'
 PASSWORD = 'YourPassword'
 SERVER = 'localhost'  # or your server name or IP address
@@ -18,6 +18,7 @@ DRIVER = 'ODBC Driver 17 for SQL Server'
 # Creating the connection string and engine for MSSQL
 connection_string = f'mssql+pyodbc://{SERVER}/{DATABASE}?driver={DRIVER}'
 export_engine = create_engine(connection_string)
+
 
 # Initialize the inspector and get the table names
 inspector = inspect(export_engine)
@@ -87,7 +88,7 @@ def table_exists_in_snowflake(engine, table_name):
 # Iterate over each table and export to CSV
 for table_name in table_names:
     if table_name not in EXCLUDED_TABLES and table_name not in processed_tables:
-        csv_path = f"D:/Repos/Data_Loads/Data_Pipeline/Data_Pipeline/Data/{table_name}.csv"
+        csv_path = f"./Data/{table_name}.csv"
         csv_output_filepaths.append(csv_path)  # Store path for later
     
         # Query the table content
@@ -105,7 +106,7 @@ for table_name in table_names:
 export_engine.dispose()
 
 # 2. Import from CSV to Snowflake
-data_dir = "D:/Repos/Data_Loads/Data_Pipeline/Data_Pipeline/Data/"
+data_dir = "./Data/"
 csv_filepaths = [os.path.join(data_dir, f) for f in os.listdir(data_dir) if f.endswith('.csv')]
 # Setup an SQL Alchemy Engine object for Snowflake
 import_engine = create_engine(
@@ -151,7 +152,7 @@ def process_csv_path(path):
 
 
 if __name__ == '__main__':
-    pool = Pool(processes=10)  # change to the number of cores you want to use
+    pool = Pool(processes=logicCores)  # change to the number of **Logical** cores you want to use
     pool.map(process_csv_path, csv_filepaths)
     pool.close()
     pool.join()
